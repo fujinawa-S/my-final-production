@@ -5,18 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Review;
 use Illuminate\Routing\Controller;
+use App\Http\Requests\StoreReviewRequest;
 
 class ReviewController extends Controller
 {
-    public function store(Request $request)
+    public function store(StoreReviewRequest $request)
     {
-        $validated = $request->validate([
-            'work_id' => 'required|exists:works,id',
-            'title' => 'required|string|max:100',
-            'body' => 'required|string|max:500',
-            'score' => 'required|numeric|min:0|max:5',
-            'is_spoiler' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         // Reviewモデルのインスタンスを作成し、データベースに保存する処理をここに追加
         Review::create([
@@ -28,6 +23,6 @@ class ReviewController extends Controller
             'is_spoiler' => $validated['is_spoiler'] ?? false,
             'is_published' => true,
         ]);
-        return redirect()->route('works.show', ['workId' => $validated['work_id']])->with('status', 'レビューを投稿しました！');
+        return redirect()->route('reviews.show', ['reviewId' => $validated['review_id']])->with('status', 'レビューを投稿しました！');
     }
 }
