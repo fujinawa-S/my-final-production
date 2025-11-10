@@ -16,10 +16,13 @@ use App\Http\Controllers\CommentController;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('reviews.index');
 });
-Route::get('/posts', [ReviewController::class, 'index']);
-Route::get('/posts/{post}', [ReviewController::class, 'show']);
-Route::post('/reviews', [ReviewController::class, 'store'])->middleware(['auth'])->name('reviews.store');
-Route::get('works/{workId}', [WorkController::class, 'show'])->name('works.show');
-Route::post('/comments', [CommentController::class, 'store'])->middleware(['auth'])->name('comments.store');
+
+Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
+Route::get('/reviews/create', [ReviewController::class, 'create'])->name('reviews.create');
+Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
+Route::get('/reviews/{id}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');
+Route::delete('/reviews/{id}', [ReviewController::class, 'delete'])->name('reviews.delete');
+Route::put('/reviews/{id}', [ReviewController::class, 'update'])->name('reviews.update');
