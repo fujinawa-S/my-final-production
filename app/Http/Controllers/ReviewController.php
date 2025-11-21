@@ -26,7 +26,6 @@ class ReviewController extends Controller
      */
     public function create()
     {
-        // 投稿対象の作品一覧を取得（プルダウン用）
         $works = Work::all();
 
         return view('reviews.create', compact('works'));
