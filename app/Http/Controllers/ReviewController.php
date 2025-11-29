@@ -2,27 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreReviewRequest;
+use App\Http\Requests\UpdateReviewRequest;
 use App\Models\Review;
 use App\Models\Work;
-use Illuminate\Routing\Controller;
-use App\Http\Requests\StoreReviewRequest;
 
 class ReviewController extends Controller
 {
     /**
-     * 一覧表示
+     * レビューの一覧を表示
      */
     public function index()
     {
-        // 投稿を新しい順に取得（User・Workも一緒に）
-        $reviews = Review::with(['user', 'work'])->latest()->get();
+        $reviews = Review::with(['user', 'work'])
+            ->withCount('favoredBy')
+            ->latest()
+            ->get();
 
-        return view('reviews.index', compact('reviews'));
+        $favoriteReviewIds = [];
+        if (auth()->check()) {
+            $favoriteReviewIds = auth()->user()
+                ->favoriteReviews()
+                ->pluck('review_favorites.review_id')
+                ->all();
+        }
+
+        return view('reviews.index', compact('reviews', 'favoriteReviewIds'));
     }
 
     /**
-     * 新規作成フォーム表示
+     * 新規作成フォーム
      */
     public function create()
     {
@@ -32,7 +41,7 @@ class ReviewController extends Controller
     }
 
     /**
-     * 新規投稿処理
+     * レビューを新規投稿
      */
     public function store(StoreReviewRequest $request)
     {
@@ -48,22 +57,30 @@ class ReviewController extends Controller
             'is_published' => true,
         ]);
 
-        // 投稿後、詳細ページへリダイレクト
         return redirect()->route('reviews.show', ['review' => $review->id])
-            ->with('status', 'レビューを投稿しました！');
+            ->with('status', 'レビューを投稿しました。');
     }
 
     /**
-     * 詳細表示
+     * レビュー詳細
      */
     public function show($id)
     {
-        $review = Review::with(['user', 'work'])->findOrFail($id);
-        return view('reviews.show', compact('review'));
+        $review = Review::with(['user', 'work', 'comments.user'])
+            ->withCount('favoredBy')
+            ->findOrFail($id);
+
+        $alreadyFavored = auth()->check()
+            ? auth()->user()->favoriteReviews()
+                ->where('review_favorites.review_id', $review->id)
+                ->exists()
+            : false;
+
+        return view('reviews.show', compact('review', 'alreadyFavored'));
     }
 
     /**
-     * 編集フォーム表示
+     * 編集フォーム
      */
     public function edit($id)
     {
@@ -74,7 +91,7 @@ class ReviewController extends Controller
     }
 
     /**
-     * 削除処理
+     * レビュー削除
      */
     public function delete($id)
     {
@@ -84,10 +101,11 @@ class ReviewController extends Controller
         return redirect()->route('reviews.index')
             ->with('status', 'レビューを削除しました');
     }
+
     /**
-     * 更新処理
+     * レビュー更新
      */
-    public function update(StoreReviewRequest $request, $id)
+    public function update(UpdateReviewRequest $request, $id)
     {
         $validated = $request->validated();
 
@@ -101,6 +119,6 @@ class ReviewController extends Controller
         ]);
 
         return redirect()->route('reviews.show', ['review' => $review->id])
-            ->with('status', 'レビューを更新しました！');
+            ->with('status', 'レビューを更新しました。');
     }
-};
+}

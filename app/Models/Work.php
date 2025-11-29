@@ -10,29 +10,39 @@ use App\Models\Author;
 use App\Models\Genre;
 use App\Models\Publisher;
 use App\Models\Review;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Work extends Model
 {
     use HasFactory;
 
-    public function authors()
+    public function author(): BelongsTo
     {
-        return $this->belongsToMany(Author::class);
+        return $this->belongsTo(Author::class);
     }
-    public function genres()
+
+    public function genre(): BelongsTo
     {
-        return $this->hasMany(Genre::class);
+        return $this->belongsTo(Genre::class);
     }
+
+    public function publisher(): BelongsTo
+    {
+        return $this->belongsTo(Publisher::class);
+    }
+
     public function reviews()
     {
         return $this->hasMany(Review::class);
     }
-    public function publishers()
-    {
-        return $this->belongsToMany(Publisher::class);
-    }
     public function episodes(): HasMany
     {
         return $this->hasMany(Episode::class);
+    }
+
+    public function favoredByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'work_favorites')
+            ->withTimestamps();
     }
 }

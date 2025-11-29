@@ -25,7 +25,7 @@ class StoreReviewRequest extends FormRequest
             'work_id' => 'required|exists:works,id',
             'title' => 'required|string|max:100',
             'body' => 'required|string|max:500',
-            'score' => 'required|numeric|min:0|max:5',
+            'score' => 'required|numeric|min:1|max:5',
             'is_spoiler' => 'nullable|boolean',
         ];
     }

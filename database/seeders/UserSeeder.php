@@ -13,22 +13,27 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        //
-        DB::table('users')->insert([
+        $users = [
             [
                 'name' => 'Admin User',
                 'email' => 'admin@example.com',
-                'password' => bcrypt('password'),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'name' => 'Regular User',
                 'email' => 'regular@example.com',
-                'password' => bcrypt('password'),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
-        ]);
+        ];
+
+        foreach ($users as $user) {
+            DB::table('users')->updateOrInsert(
+                ['email' => $user['email']],
+                [
+                    'name' => $user['name'],
+                    'password' => bcrypt('password'),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
     }
 }

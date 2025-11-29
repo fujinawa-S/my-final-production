@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Episode;
 
 class User extends Authenticatable
 {
@@ -42,4 +44,32 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function favoriteReviews(): BelongsToMany
+    {
+        return $this->belongsToMany(Review::class, 'review_favorites')
+            ->withTimestamps();
+    }
+
+    public function favoriteWorks(): BelongsToMany
+    {
+        return $this->belongsToMany(Work::class, 'work_favorites')
+            ->withTimestamps();
+    }
+
+    public function favoriteEpisodes(): BelongsToMany
+    {
+        return $this->belongsToMany(Episode::class, 'episode_favorites')
+            ->withTimestamps();
+    }
 }

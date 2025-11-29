@@ -5,8 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\User;
 use App\Models\Work;
+use App\Models\Comment;
 
 class Review extends Model
 {
@@ -17,8 +19,15 @@ class Review extends Model
         'work_id',
         'title',
         'body',
+        'score',
         'is_spoiler',
         'is_published',
+    ];
+
+    protected $casts = [
+        'score' => 'integer',
+        'is_spoiler' => 'boolean',
+        'is_published' => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -28,5 +37,16 @@ class Review extends Model
     public function work(): BelongsTo
     {
         return $this->belongsTo(Work::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function favoredBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'review_favorites')
+            ->withTimestamps();
     }
 }
