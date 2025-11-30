@@ -34,7 +34,7 @@
         </div>
         @endif
 
-        <form action="{{ route('reviews.store') }}" method="POST" class="space-y-5">
+        <form action="{{ route('reviews.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
             @csrf
 
             <div>
@@ -65,6 +65,18 @@
                 <input type="checkbox" name="is_spoiler" value="1" {{ old('is_spoiler') ? 'checked' : '' }}>
                 <span>ネタバレを含む</span>
             </label>
+
+            <div>
+                <label for="photos" class="block mb-1">写真（最大4枚）：</label>
+                <input type="file" name="photos[]" id="photos" accept="image/*" multiple class="review-input">
+                <p class="text-sm text-gray-400 mt-1">Cloudinary にアップロードされます。5MB以下の画像をご利用ください。</p>
+                @error('photos')
+                    <p class="text-sm text-red-400 mt-1">{{ $message }}</p>
+                @enderror
+                @error('photos.*')
+                    <p class="text-sm text-red-400 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
 
             <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700">
                 投稿する

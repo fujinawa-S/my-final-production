@@ -86,6 +86,14 @@
                 {{ $review->body }}
             </p>
 
+            @if ($review->photos->isNotEmpty())
+                <div class="grid gap-3 sm:grid-cols-2">
+                    @foreach ($review->photos as $photo)
+                        <img src="{{ $photo->url }}" alt="レビュー写真" class="w-full h-48 object-cover rounded-lg border border-[#2f3640]" />
+                    @endforeach
+                </div>
+            @endif
+
             <div class="flex flex-wrap items-center gap-3">
                 <form action="{{ $alreadyFavored ? route('reviews.favorite.destroy', $review) : route('reviews.favorite.store', $review) }}" method="POST">
                     @csrf

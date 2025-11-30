@@ -25,6 +25,8 @@ class UpdateReviewRequest extends FormRequest
             'body' => 'required|string|max:500',
             'score' => 'required|numeric|min:1|max:5',
             'is_spoiler' => 'nullable|boolean',
+            'photos' => 'nullable|array|max:4',
+            'photos.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
         ];
     }
 }

@@ -11,7 +11,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        if ($this->app->environment('local')) {
+            config(['cloudinary.verify_ssl' => false]);
+        }
     }
 
     /**
@@ -19,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Allow multi-image uploads locally.
+        ini_set('upload_max_filesize', '10M');
+        ini_set('post_max_size', '25M');
+        ini_set('max_file_uploads', '10');
     }
 }

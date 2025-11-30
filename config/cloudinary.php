@@ -32,6 +32,7 @@ return [
     |
     */
     'cloud_url' => env('CLOUDINARY_URL'),
+    'verify_ssl' => env('CLOUDINARY_VERIFY_SSL', true),
 
     /**
      * Upload Preset From Cloudinary Dashboard
@@ -48,3 +49,4 @@ return [
      */
     'upload_action' => env('CLOUDINARY_UPLOAD_ACTION'),
 ];
+

@@ -63,7 +63,12 @@
                             </h3>
                             <span class="list-tag">お気に入り {{ $review->favored_by_count ?? 0 }}</span>
                         </div>
-                        <p class="list-meta">作品：{{ $review->work->title ?? '不明' }} / 評価：{{ $review->score }}/5</p>
+                        <p class="list-meta">
+                            作品：{{ $review->work->title ?? '不明' }} / 評価：{{ $review->score }}/5
+                            @if ($review->photos_count ?? 0)
+                                <span class="ml-2 text-xs text-indigo-200">📷 写真あり（{{ $review->photos_count }}）</span>
+                            @endif
+                        </p>
                         <p class="text-gray-200">{{ Str::limit($review->body, 120) }}</p>
                         <div class="flex flex-wrap items-center gap-3 text-sm">
                             <a href="{{ route('reviews.edit', $review) }}" class="text-indigo-300 hover:underline">編集</a>

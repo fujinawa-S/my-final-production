@@ -41,7 +41,7 @@
         @endif
 
         <div class="review-card">
-            <form action="{{ route('reviews.update', $review) }}" method="POST" class="space-y-6">
+            <form action="{{ route('reviews.update', $review) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 @method('PUT')
 
@@ -73,6 +73,31 @@
                         <input type="checkbox" name="is_spoiler" id="is_spoiler" value="1" class="rounded border-gray-500 text-indigo-400 focus:ring-indigo-400" @checked(old('is_spoiler', $review->is_spoiler)) />
                         <label for="is_spoiler" class="text-sm text-gray-300">ネタバレを含む</label>
                     </div>
+                </div>
+
+                <div class="space-y-3">
+                    <p class="text-sm text-gray-300">現在登録されている写真（{{ $review->photos->count() }} / 4）</p>
+                    @if ($review->photos->isEmpty())
+                        <p class="text-sm text-gray-400">まだ写真はありません。</p>
+                    @else
+                        <div class="grid grid-cols-2 gap-3">
+                            @foreach ($review->photos as $photo)
+                                <img src="{{ $photo->url }}" alt="レビュー写真" class="rounded-lg object-cover w-full h-32 border border-[#2f3640]" />
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                <div>
+                    <label for="photos" class="block text-sm font-medium text-gray-300 mb-1">写真を追加（最大4枚まで）</label>
+                    <input type="file" name="photos[]" id="photos" accept="image/*" multiple class="review-input">
+                    <p class="text-sm text-gray-400 mt-1">Cloudinary に保存されます。5MB以下の画像を選択してください。</p>
+                    @error('photos')
+                        <p class="text-sm text-red-400 mt-1">{{ $message }}</p>
+                    @enderror
+                    @error('photos.*')
+                        <p class="text-sm text-red-400 mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="flex items-center justify-end gap-3">

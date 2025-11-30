@@ -6,16 +6,20 @@ use App\Http\Requests\StoreReviewRequest;
 use App\Http\Requests\UpdateReviewRequest;
 use App\Models\Review;
 use App\Models\Work;
+use Cloudinary\Api\Upload\UploadApi;
+use GuzzleHttp\Client;
+use Illuminate\Http\UploadedFile;
+use ReflectionClass;
 
 class ReviewController extends Controller
 {
     /**
-     * レビューの一覧を表示
+     * レビュー一覧
      */
     public function index()
     {
         $reviews = Review::with(['user', 'work'])
-            ->withCount('favoredBy')
+            ->withCount(['favoredBy', 'photos'])
             ->latest()
             ->get();
 
@@ -31,7 +35,7 @@ class ReviewController extends Controller
     }
 
     /**
-     * 新規作成フォーム
+     * 投稿フォーム
      */
     public function create()
     {
@@ -41,7 +45,7 @@ class ReviewController extends Controller
     }
 
     /**
-     * レビューを新規投稿
+     * 新規投稿
      */
     public function store(StoreReviewRequest $request)
     {
@@ -57,16 +61,20 @@ class ReviewController extends Controller
             'is_published' => true,
         ]);
 
-        return redirect()->route('reviews.show', ['review' => $review->id])
+        if ($request->hasFile('photos')) {
+            $this->storePhotos($review, $request->file('photos'));
+        }
+
+        return redirect()->route('reviews.show', $review)
             ->with('status', 'レビューを投稿しました。');
     }
 
     /**
-     * レビュー詳細
+     * 詳細表示
      */
     public function show($id)
     {
-        $review = Review::with(['user', 'work', 'comments.user'])
+        $review = Review::with(['user', 'work', 'comments.user', 'photos'])
             ->withCount('favoredBy')
             ->findOrFail($id);
 
@@ -84,32 +92,32 @@ class ReviewController extends Controller
      */
     public function edit($id)
     {
-        $review = Review::findOrFail($id);
+        $review = Review::with('photos')->findOrFail($id);
         $works = Work::all();
 
         return view('reviews.edit', compact('review', 'works'));
     }
 
     /**
-     * レビュー削除
+     * 削除
      */
     public function delete($id)
     {
-        $review = Review::findOrFail($id);
+        $review = Review::with('photos')->findOrFail($id);
         $review->delete();
 
         return redirect()->route('reviews.index')
-            ->with('status', 'レビューを削除しました');
+            ->with('status', 'レビューを削除しました。');
     }
 
     /**
-     * レビュー更新
+     * 更新
      */
     public function update(UpdateReviewRequest $request, $id)
     {
         $validated = $request->validated();
 
-        $review = Review::findOrFail($id);
+        $review = Review::with('photos')->findOrFail($id);
         $review->update([
             'work_id' => $validated['work_id'],
             'title' => $validated['title'],
@@ -118,7 +126,92 @@ class ReviewController extends Controller
             'is_spoiler' => $validated['is_spoiler'] ?? false,
         ]);
 
-        return redirect()->route('reviews.show', ['review' => $review->id])
+        if ($request->hasFile('photos')) {
+            $existingCount = $review->photos->count();
+            $remainingSlots = max(0, 4 - $existingCount);
+            $newPhotos = $request->file('photos');
+
+            if ($remainingSlots <= 0) {
+                return back()
+                    ->withErrors(['photos' => '写真は最大4枚までです。'])
+                    ->withInput();
+            }
+
+            if (count($newPhotos) > $remainingSlots) {
+                return back()
+                    ->withErrors(['photos' => "写真はあと{$remainingSlots}枚まで追加できます。"])
+                    ->withInput();
+            }
+
+            $this->storePhotos($review, $newPhotos);
+        }
+
+        return redirect()->route('reviews.show', $review)
             ->with('status', 'レビューを更新しました。');
+    }
+
+    /**
+     * Cloudinary へアップロードして紐づけ
+     */
+    private function storePhotos(Review $review, array $photos): void
+    {
+        $uploadApi = $this->makeUploadApi();
+
+        foreach ($photos as $photo) {
+            if (! $photo instanceof UploadedFile) {
+                continue;
+            }
+
+            $uploadedFile = $uploadApi->upload($photo->getRealPath(), [
+                'folder' => 'reviews',
+                'transformation' => [
+                    'quality' => 'auto',
+                    'fetch_format' => 'auto',
+                    'width' => 1200,
+                    'height' => 1200,
+                    'crop' => 'fill',
+                    'gravity' => 'auto',
+                ],
+            ]);
+
+            $securePath = null;
+
+            if (is_array($uploadedFile) || $uploadedFile instanceof \ArrayAccess) {
+                $securePath = $uploadedFile['secure_url'] ?? $uploadedFile['url'] ?? null;
+            }
+
+            if (! $securePath && method_exists($uploadedFile, 'getSecurePath')) {
+                $securePath = $uploadedFile->getSecurePath();
+            }
+
+            if ($securePath) {
+                $review->photos()->create([
+                    'path' => $securePath,
+                ]);
+            }
+        }
+    }
+
+    private function makeUploadApi(): UploadApi
+    {
+        $uploadApi = cloudinary()->uploadApi();
+
+        if (! config('cloudinary.verify_ssl', true)) {
+            $reflection = new ReflectionClass($uploadApi);
+            $property = $reflection->getProperty('apiClient');
+            $property->setAccessible(true);
+
+            $apiClient = $property->getValue($uploadApi);
+            $httpClient = $apiClient->httpClient ?? null;
+
+            if ($httpClient instanceof Client) {
+                $apiClient->httpClient = new Client(array_merge(
+                    $httpClient->getConfig(),
+                    ['verify' => false]
+                ));
+            }
+        }
+
+        return $uploadApi;
     }
 }
